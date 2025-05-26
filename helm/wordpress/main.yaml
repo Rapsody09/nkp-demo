@@ -1,0 +1,26 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: demo-wordpress
+spec:
+  interval: 15s
+  releaseName: demo-wordpress
+  chart:
+    spec:
+      chart: wordpress
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami-custom
+      version: "24.1.18"
+  values:
+    global:
+      imageRegistry: "10.0.114.161:5000/library"
+      security:
+        allowInsecureImages: True
+    podLabels:
+      app: demo-wordpress
+      version: "24.1.18"
+    replicaCount: 1
+    wordpressUsername: erwann
+    wordpressPassword: erwann
