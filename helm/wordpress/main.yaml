@@ -24,3 +24,5 @@ spec:
     replicaCount: 1
     wordpressUsername: erwann
     wordpressPassword: erwann
+    wordpressBlogName: "NKP demo works !"
+    
