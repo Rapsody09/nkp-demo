@@ -25,6 +25,3 @@ spec:
     wordpressUsername: erwann
     wordpressPassword: erwann
     wordpressBlogName: "NKP demo works !"
-    persistence:
-      accessMode: ReadWriteMany
-    
