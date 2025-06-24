@@ -72,25 +72,7 @@ data:
             <h1>🚀 Demo NKP</h1>
             <p class="subtitle">Nutanix Kubernetes Platform</p>
             <p>Déploiement réussi dans le cluster Kubernetes!</p>
-            
-            <div class="features">
-                <div class="feature">
-                    <div class="emoji">⚡</div>
-                    <h3>Performance</h3>
-                    <p>Infrastructure optimisée</p>
-                </div>
-                <div class="feature">
-                    <div class="emoji">🔒</div>
-                    <h3>Sécurité</h3>
-                    <p>Environnement sécurisé</p>
-                </div>
-                <div class="feature">
-                    <div class="emoji">📊</div>
-                    <h3>Monitoring</h3>
-                    <p>Surveillance en temps réel</p>
-                </div>
-            </div>
-            
+
             <div class="timestamp">
                 Déployé le: <span id="timestamp"></span>
             </div>
