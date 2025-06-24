@@ -2,6 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: demo-nginx
+  labels:
+    app: demo-nginx
+    version: v1.0.0
+    component: frontend
+    environment: demo
 spec:
   replicas: 3
   selector:
@@ -14,7 +19,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: 10.0.114.161:5000/library/nginx:latest
+          image: 10.0.114.161:5000/library/nginx:1.25.3-alpine
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
@@ -22,3 +27,10 @@ spec:
             requests:
               cpu: 100m
               memory: 100Mi
+          volumeMounts:
+            - name: html-volume
+              mountPath: /usr/share/nginx/html
+      volumes:
+        - name: html-volume
+          configMap:
+            name: demo-nginx-html
