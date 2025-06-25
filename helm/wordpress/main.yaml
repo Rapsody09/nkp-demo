@@ -26,6 +26,9 @@ spec:
     wordpressUsername: erwann
     wordpressPassword: erwann
     wordpressBlogName: "Nutanix Kubernetes Platform Demo"
+
+    readinessProbe:
+      readinessProbe: 60
     
     # Scripts de personnalisation post-installation
     customPostInitScripts:
