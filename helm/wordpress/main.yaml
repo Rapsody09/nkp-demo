@@ -162,22 +162,44 @@ spec:
         name: edit  # ClusterRole prédéfini avec permissions PVC
         apiGroup: rbac.authorization.k8s.io
     
-    # Job de nettoyage
+    # Job de nettoyage intelligent
     - apiVersion: batch/v1
       kind: Job
       metadata:
         name: cleanup-pvcs
         annotations:
-          "helm.sh/hook": pre-delete
-          "helm.sh/hook-delete-policy": before-hook-creation
+          "helm.sh/hook": post-delete
+          "helm.sh/hook-weight": "5"
+          "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
       spec:
         template:
           spec:
             containers:
             - name: cleanup
               image: 10.0.114.161:5000/library/bitnami/kubectl:latest
-              command: ['sh', '-c', 'kubectl delete pvc -l app.kubernetes.io/instance=demo-wordpress --ignore-not-found=true']
+              command: 
+              - /bin/bash
+              - -c
+              - |
+                echo "🗑️ Début du nettoyage post-suppression..."
+                
+                # Attendre que tous les pods WordPress soient supprimés
+                echo "⏳ Attente de la suppression des pods..."
+                kubectl wait --for=delete pod -l app.kubernetes.io/instance=demo-wordpress --timeout=120s || echo "Timeout - continuons"
+                
+                # Attendre encore un peu pour être sûr
+                sleep 15
+                
+                echo "🔍 Recherche des PVCs restants..."
+                kubectl get pvc -l app.kubernetes.io/instance=demo-wordpress || echo "Aucun PVC trouvé avec label"
+                
+                echo "🗑️ Suppression des PVCs..."
+                kubectl delete pvc -l app.kubernetes.io/instance=demo-wordpress --ignore-not-found=true
+                
+                echo "✅ Nettoyage terminé !"
             restartPolicy: Never
+        backoffLimit: 1
+        activeDeadlineSeconds: 300
 
 
 
