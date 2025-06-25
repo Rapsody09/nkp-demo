@@ -25,10 +25,7 @@ spec:
     # Configuration WordPress personnalisée
     wordpressUsername: erwann
     wordpressPassword: erwann
-    wordpressEmail: demo@nkp.local
     wordpressBlogName: "Nutanix Kubernetes Platform Demo"
-    wordpressFirstName: "Demo"
-    wordpressLastName: "Admin"
     
     # Scripts de personnalisation post-installation
     customPostInitScripts:
@@ -186,30 +183,17 @@ spec:
     
     # Base de données MySQL
     mysql:
-      auth:
-        rootPassword: RootPassword123!
-        database: wordpress_demo
-        username: wp_user
-        password: WpPassword123!
       primary:
         persistence:
           enabled: true
           size: 8Gi
           storageClass: "nutanix-volume"
-          # Force la suppression du PVC lors de la désinstallation
-          annotations:
-            "helm.sh/resource-policy": ""
-          # Ou utiliser cette annotation pour garder le PVC (commenté ici)
-          # annotations:
-          #   "helm.sh/resource-policy": "keep"
-    
-    # Persistance WordPress également
-    persistence:
-      enabled: true
-      size: 10Gi
-      storageClass: "nutanix-volume"
-      # Supprimer aussi le PVC WordPress
-      annotations:
-        "helm.sh/resource-policy": ""
+        # Pour les StatefulSets, utiliser cette approche
+        podAnnotations:
+          "helm.sh/resource-policy": ""
+        # Ou directement sur le StatefulSet
+        statefulsetAnnotations:
+          "helm.sh/resource-policy": ""
+
 
 
