@@ -3,6 +3,9 @@ apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: demo-wordpress
+  labels:
+    app: demo-wordpress
+    environment: demo
 spec:
   interval: 15s
   releaseName: demo-wordpress
@@ -17,10 +20,148 @@ spec:
     global:
       imageRegistry: "10.0.114.161:5000/library"
       security:
-        allowInsecureImages: True
+        allowInsecureImages: true
+    
+    # Configuration WordPress personnalisée
+    wordpressUsername: erwann
+    wordpressPassword: erwann
+    wordpressEmail: demo@nutanix.local
+    wordpressBlogName: "Nutanix Kubernetes Platform Demo"
+    wordpressFirstName: "Demo"
+    wordpressLastName: "Admin"
+    
+    # Scripts de personnalisation post-installation
+    customPostInitScripts:
+      setup-demo-theme.sh: |
+        #!/bin/bash
+        set -e
+        echo "🚀 Début de la personnalisation WordPress pour la démo NKP..."
+        
+        # Attendre que WordPress soit complètement initialisé
+        echo "⏳ Attente de l'initialisation WordPress..."
+        sleep 30
+        
+        # Installer et activer un thème moderne
+        echo "🎨 Installation du thème Twenty Twenty-Four..."
+        wp theme install twentytwentyfour --activate --allow-root --path=/bitnami/wordpress || echo "⚠️ Thème déjà installé"
+        
+        # Créer une page d'accueil personnalisée
+        echo "📝 Création de la page d'accueil personnalisée..."
+        cat > /tmp/demo-homepage.html << 'EOF'
+        <!-- wp:cover {"url":"","dimRatio":50,"gradient":"vivid-cyan-blue-to-vivid-purple","align":"full","style":{"spacing":{"padding":{"top":"8rem","bottom":"8rem"}}}} -->
+        <div class="wp-block-cover alignfull has-background-dim" style="padding-top:8rem;padding-bottom:8rem;background:linear-gradient(135deg,rgb(6,147,227) 0%,rgb(155,81,224) 100%)">
+          <div class="wp-block-cover__inner-container">
+            <!-- wp:heading {"textAlign":"center","level":1,"style":{"typography":{"fontSize":"4rem","fontWeight":"700"},"elements":{"link":{"color":{"text":"var:preset|color|white"}}}},"textColor":"white"} -->
+            <h1 class="wp-block-heading has-text-align-center has-white-color has-text-color has-link-color" style="font-size:4rem;font-weight:700">🚀 Nutanix Kubernetes Platform</h1>
+            <!-- /wp:heading -->
+            
+            <!-- wp:heading {"textAlign":"center","level":2,"style":{"typography":{"fontSize":"1.5rem"},"elements":{"link":{"color":{"text":"var:preset|color|white"}}}},"textColor":"white"} -->
+            <h2 class="wp-block-heading has-text-align-center has-white-color has-text-color has-link-color" style="font-size:1.5rem">WordPress déployé avec succès !</h2>
+            <!-- /wp:heading -->
+          </div>
+        </div>
+        <!-- /wp:cover -->
+        
+        <!-- wp:columns {"align":"wide","style":{"spacing":{"padding":{"top":"4rem","bottom":"4rem"}}}} -->
+        <div class="wp-block-columns alignwide" style="padding-top:4rem;padding-bottom:4rem">
+          <!-- wp:column -->
+          <div class="wp-block-column">
+            <!-- wp:heading {"textAlign":"center","level":3} -->
+            <h3 class="wp-block-heading has-text-align-center">⚡ Performance</h3>
+            <!-- /wp:heading -->
+            <!-- wp:paragraph {"align":"center"} -->
+            <p class="has-text-align-center">Infrastructure Nutanix haute performance avec stockage distribué et mise en réseau optimisée.</p>
+            <!-- /wp:paragraph -->
+          </div>
+          <!-- /wp:column -->
+          
+          <!-- wp:column -->
+          <div class="wp-block-column">
+            <!-- wp:heading {"textAlign":"center","level":3} -->
+            <h3 class="wp-block-heading has-text-align-center">🔒 Sécurité</h3>
+            <!-- /wp:heading -->
+            <!-- wp:paragraph {"align":"center"} -->
+            <p class="has-text-align-center">Déploiement sécurisé avec FluxCD, gestion des secrets et isolation des conteneurs.</p>
+            <!-- /wp:paragraph -->
+          </div>
+          <!-- /wp:column -->
+          
+          <!-- wp:column -->
+          <div class="wp-block-column">
+            <!-- wp:heading {"textAlign":"center","level":3} -->
+            <h3 class="wp-block-heading has-text-align-center">📊 Observabilité</h3>
+            <!-- /wp:heading -->
+            <!-- wp:paragraph {"align":"center"} -->
+            <p class="has-text-align-center">Monitoring intégré, métriques temps réel et alertes automatisées.</p>
+            <!-- /wp:paragraph -->
+          </div>
+          <!-- /wp:column -->
+        </div>
+        <!-- /wp:columns -->
+        
+        <!-- wp:group {"style":{"color":{"background":"#f8fafc"},"spacing":{"padding":{"top":"2rem","bottom":"2rem","left":"2rem","right":"2rem"}},"border":{"radius":"1rem"}},"layout":{"type":"constrained"}} -->
+        <div class="wp-block-group has-background" style="border-radius:1rem;background-color:#f8fafc;padding-top:2rem;padding-right:2rem;padding-bottom:2rem;padding-left:2rem">
+          <!-- wp:heading {"textAlign":"center","level":2} -->
+          <h2 class="wp-block-heading has-text-align-center">🎯 Démonstration technique</h2>
+          <!-- /wp:heading -->
+          <!-- wp:list -->
+          <ul>
+            <li><strong>GitOps avec FluxCD</strong> - Déploiement automatisé depuis Git</li>
+            <li><strong>Helm Charts</strong> - Configuration et packaging standardisés</li>
+            <li><strong>Nutanix Kubernetes Platform</strong> - Infrastructure cloud-native</li>
+            <li><strong>Persistance des données</strong> - Volumes Nutanix hautement disponibles</li>
+          </ul>
+          <!-- /wp:list -->
+        </div>
+        <!-- /wp:group -->
+        EOF
+        
+        # Créer la page avec wp-cli
+        page_id=$(wp post create --post_type=page --post_title="Accueil Demo NKP" \
+          --post_content="$(cat /tmp/demo-homepage.html)" \
+          --post_status=publish --porcelain --allow-root --path=/bitnami/wordpress)
+        
+        echo "🏠 Configuration de la page d'accueil (ID: $page_id)..."
+        wp option update show_on_front page --allow-root --path=/bitnami/wordpress
+        wp option update page_on_front $page_id --allow-root --path=/bitnami/wordpress
+        
+        # Personnaliser les options du site
+        echo "⚙️ Personnalisation des options WordPress..."
+        wp option update blogdescription "Démo de déploiement sur Nutanix Kubernetes Platform" --allow-root --path=/bitnami/wordpress
+        wp option update date_format "d/m/Y" --allow-root --path=/bitnami/wordpress
+        wp option update time_format "H:i" --allow-root --path=/bitnami/wordpress
+        wp option update start_of_week 1 --allow-root --path=/bitnami/wordpress
+        
+        # Désactiver les commentaires par défaut
+        wp option update default_comment_status closed --allow-root --path=/bitnami/wordpress
+        wp option update default_ping_status closed --allow-root --path=/bitnami/wordpress
+        
+        echo "✅ Personnalisation WordPress terminée avec succès !"
+        echo "🌟 Page d'accueil configurée avec l'ID: $page_id"
+    
+    # Thème et plugins
+    wordpressExtraConfigContent: |
+      // Configuration personnalisée pour la démo
+      define('WP_DEBUG', false);
+      define('AUTOMATIC_UPDATER_DISABLED', true);
+      define('WP_POST_REVISIONS', 3);
+      
+    # Labels et métadonnées
     podLabels:
       app: demo-wordpress
       version: "24.1.18"
+      component: cms
+      environment: demo
+    
+    # Performances optimisées pour démo
     replicaCount: 1
-    wordpressUsername: erwann
-    wordpressPassword: erwann
+    
+    # Base de données MySQL
+    mysql:
+      auth:
+        rootPassword: RootPassword123!
+        database: wordpress_demo
+        username: wp_user
+        password: WpPassword123!
+
+
