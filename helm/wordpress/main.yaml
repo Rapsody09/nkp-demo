@@ -3,6 +3,9 @@ apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: demo-wordpress
+  labels:
+    app: demo-wordpress
+    environment: demo
 spec:
   interval: 15s
   releaseName: demo-wordpress
@@ -12,16 +15,191 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: bitnami-custom
-      version: "24.1.18"
+      version: "24.2.11"
   values:
     global:
       imageRegistry: "10.0.114.161:5000/library"
       security:
-        allowInsecureImages: True
+        allowInsecureImages: true
+    
+    # Configuration WordPress personnalisée
+    wordpressUsername: erwann
+    wordpressPassword: erwann
+    wordpressBlogName: "Nutanix Kubernetes Platform Demo"
+
+    readinessProbe:
+      initialDelaySeconds: 60
+    
+    # Scripts de personnalisation post-installation
+    customPostInitScripts:
+      setup-demo-theme.sh: |
+        #!/bin/bash
+        set -e
+        echo "🚀 Début de la personnalisation WordPress pour la démo NKP..."
+        
+        # Attendre que WordPress soit complètement installé
+        echo "⏳ Attente de l'installation complète de WordPress..."
+        for i in {1..60}; do
+          if [ -f "/opt/bitnami/wordpress/wp-config.php" ] && \
+             wp core is-installed --path=/opt/bitnami/wordpress --allow-root 2>/dev/null; then
+            echo "✅ WordPress est prêt ! (tentative $i/60)"
+            break
+          fi
+          echo "⏳ WordPress pas encore prêt, attente... ($i/60)"
+          sleep 5
+        done
+        
+        # Vérification finale
+        if ! wp core is-installed --path=/opt/bitnami/wordpress --allow-root 2>/dev/null; then
+          echo "❌ WordPress n'est toujours pas installé après 5 minutes"
+          echo "🔍 Contenu du répertoire /opt/bitnami/wordpress:"
+          ls -la /opt/bitnami/wordpress/ || echo "Répertoire non accessible"
+          exit 1
+        fi
+        
+        echo "🎨 Installation du thème Twenty Twenty-Four..."
+        wp theme install twentytwentyfour --activate --allow-root --path=/opt/bitnami/wordpress || {
+          echo "⚠️ Échec installation thème, utilisation du thème par défaut"
+        }
+        
+        # Créer une page d'accueil personnalisée
+        echo "📝 Création de la page d'accueil personnalisée..."
+        cat > /tmp/demo-homepage.html << 'EOF'
+        <!-- wp:cover {"gradient":"vivid-cyan-blue-to-vivid-purple","align":"full","style":{"spacing":{"padding":{"top":"8rem","bottom":"8rem"}}}} -->
+        <div class="wp-block-cover alignfull has-vivid-cyan-blue-to-vivid-purple-gradient-background has-background-dim" style="padding-top:8rem;padding-bottom:8rem">
+          <div class="wp-block-cover__inner-container">
+            <!-- wp:heading {"textAlign":"center","level":1,"style":{"typography":{"fontSize":"4rem","fontWeight":"700"},"color":{"text":"#ffffff"}}} -->
+            <h1 class="wp-block-heading has-text-align-center" style="color:#ffffff;font-size:4rem;font-weight:700">🚀 Nutanix Kubernetes Platform</h1>
+            <!-- /wp:heading -->
+            
+            <!-- wp:heading {"textAlign":"center","level":2,"style":{"typography":{"fontSize":"1.5rem"},"color":{"text":"#ffffff"}}} -->
+            <h2 class="wp-block-heading has-text-align-center" style="color:#ffffff;font-size:1.5rem">WordPress déployé avec succès !</h2>
+            <!-- /wp:heading -->
+          </div>
+        </div>
+        <!-- /wp:cover -->
+        
+  
+        EOF
+        
+        # Créer la page avec wp-cli
+        echo "🏠 Création de la page d'accueil..."
+        page_id=$(wp post create --post_type=page --post_title="Accueil Demo NKP" \
+          --post_content="$(cat /tmp/demo-homepage.html)" \
+          --post_status=publish --porcelain --allow-root --path=/opt/bitnami/wordpress)
+        
+        if [ -n "$page_id" ] && [ "$page_id" -gt 0 ]; then
+          echo "🏠 Configuration de la page d'accueil (ID: $page_id)..."
+          wp option update show_on_front page --allow-root --path=/opt/bitnami/wordpress
+          wp option update page_on_front $page_id --allow-root --path=/opt/bitnami/wordpress
+        else
+          echo "⚠️ Échec de création de la page d'accueil"
+        fi
+        
+        # Personnaliser les options du site
+        echo "⚙️ Personnalisation des options WordPress..."
+        wp option update blogdescription "Démo de déploiement sur Nutanix Kubernetes Platform" --allow-root --path=/opt/bitnami/wordpress
+        wp option update date_format "d/m/Y" --allow-root --path=/opt/bitnami/wordpress
+        wp option update time_format "H:i" --allow-root --path=/opt/bitnami/wordpress
+        wp option update start_of_week 1 --allow-root --path=/opt/bitnami/wordpress
+        
+        # Désactiver les commentaires par défaut
+        wp option update default_comment_status closed --allow-root --path=/opt/bitnami/wordpress
+        wp option update default_ping_status closed --allow-root --path=/opt/bitnami/wordpress
+        
+        echo "✅ Personnalisation WordPress terminée avec succès !"
+        echo "🌟 Page d'accueil configurée avec l'ID: $page_id"
+    
+    # Configuration WordPress corrigée
+    wordpressExtraConfigContent: |
+      // Configuration personnalisée pour la démo (éviter les doublons)
+      if (!defined('WP_DEBUG')) {
+          define('WP_DEBUG', false);
+      }
+      if (!defined('AUTOMATIC_UPDATER_DISABLED')) {
+          define('AUTOMATIC_UPDATER_DISABLED', true);
+      }
+      if (!defined('WP_POST_REVISIONS')) {
+          define('WP_POST_REVISIONS', 3);
+      }
+      
+    # Labels et métadonnées
     podLabels:
       app: demo-wordpress
       version: "24.1.18"
+      component: cms
+      environment: demo
+    
+    # Performances optimisées pour démo
     replicaCount: 1
-    wordpressUsername: erwann
-    wordpressPassword: erwann
-    wordpressBlogName: "NKP demo works !"
+    
+    # Base de données MySQL
+    mysql:
+      primary:
+        persistence:
+          enabled: true
+          size: 8Gi
+          storageClass: "nutanix-volume"
+    
+    # Persistance WordPress
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "nutanix-volume"
+    
+    # TO delete stefull pvc after install
+    extraDeploy:
+    # Donner des permissions au SA default
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: default-cleanup-binding
+        annotations:
+          "helm.sh/hook": pre-delete
+          "helm.sh/hook-delete-policy": before-hook-creation
+      subjects:
+      - kind: ServiceAccount
+        name: default
+      roleRef:
+        kind: ClusterRole
+        name: edit  # ClusterRole prédéfini avec permissions PVC
+        apiGroup: rbac.authorization.k8s.io
+    
+    # Job de nettoyage intelligent
+    - apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: cleanup-pvcs
+        annotations:
+          "helm.sh/hook": post-delete
+          "helm.sh/hook-weight": "5"
+          "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+      spec:
+        template:
+          spec:
+            containers:
+            - name: cleanup
+              # CORRIGER : Utiliser une version spécifique
+              image: 10.0.114.161:5000/library/bitnami/kubectl:1.28.4
+              # Ou la version correspondant à votre cluster
+              # image: 10.0.114.161:5000/library/bitnami/kubectl:1.29.1
+              command: 
+              - /bin/bash
+              - -c
+              - |
+                echo "🗑️ Début du nettoyage post-suppression..."
+                
+                # Attendre que tous les pods WordPress soient supprimés
+                echo "⏳ Attente de la suppression des pods..."
+                kubectl wait --for=delete pod -l app.kubernetes.io/instance=demo-wordpress --timeout=120s || echo "Timeout - continuons"
+                                
+                echo "🔍 Recherche des PVCs restants..."
+                kubectl get pvc -l app.kubernetes.io/instance=demo-wordpress || echo "Aucun PVC trouvé avec label"
+                
+                echo "🗑️ Suppression des PVCs..."
+                kubectl delete pvc -l app.kubernetes.io/instance=demo-wordpress --ignore-not-found=true
+                
+                echo "✅ Nettoyage terminé !"
+            restartPolicy: Never
+        backoffLimit: 1
+        activeDeadlineSeconds: 300
