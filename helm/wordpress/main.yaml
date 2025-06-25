@@ -28,7 +28,7 @@ spec:
     wordpressBlogName: "Nutanix Kubernetes Platform Demo"
 
     readinessProbe:
-      readinessProbe: 60
+      initialDelaySeconds: 60
     
     # Scripts de personnalisation post-installation
     customPostInitScripts:
