@@ -73,13 +73,7 @@ data:
             <p class="subtitle">Nutanix Kubernetes Platform</p>
             <p>Déploiement réussi dans le cluster Kubernetes!</p>
 
-            <div class="timestamp">
-                Déployé le: <span id="timestamp"></span>
-            </div>
         </div>
         
-        <script>
-            document.getElementById('timestamp').textContent = new Date().toLocaleString('fr-FR');
-        </script>
     </body>
     </html>
