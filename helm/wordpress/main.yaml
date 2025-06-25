@@ -192,10 +192,7 @@ spec:
                 # Attendre que tous les pods WordPress soient supprimés
                 echo "⏳ Attente de la suppression des pods..."
                 kubectl wait --for=delete pod -l app.kubernetes.io/instance=demo-wordpress --timeout=120s || echo "Timeout - continuons"
-                
-                # Attendre encore un peu pour être sûr
-                sleep 15
-                
+                                
                 echo "🔍 Recherche des PVCs restants..."
                 kubectl get pvc -l app.kubernetes.io/instance=demo-wordpress || echo "Aucun PVC trouvé avec label"
                 
@@ -206,6 +203,3 @@ spec:
             restartPolicy: Never
         backoffLimit: 1
         activeDeadlineSeconds: 300
-
-
-
