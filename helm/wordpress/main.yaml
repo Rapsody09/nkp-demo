@@ -176,7 +176,10 @@ spec:
           spec:
             containers:
             - name: cleanup
-              image: 10.0.114.161:5000/library/bitnami/kubectl:latest
+              # CORRIGER : Utiliser une version spécifique
+              image: 10.0.114.161:5000/library/bitnami/kubectl:1.28.4
+              # Ou la version correspondant à votre cluster
+              # image: 10.0.114.161:5000/library/bitnami/kubectl:1.29.1
               command: 
               - /bin/bash
               - -c
