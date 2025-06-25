@@ -8,7 +8,7 @@ metadata:
     component: frontend
     environment: demo
 spec:
-  replicas: 30
+  replicas: 3
   selector:
     matchLabels:
       app: demo-nginx
@@ -25,7 +25,7 @@ spec:
             - containerPort: 80
           resources:
             requests:
-              cpu: 1
+              cpu: 100m
               memory: 100Mi
           volumeMounts:
             - name: html-volume
