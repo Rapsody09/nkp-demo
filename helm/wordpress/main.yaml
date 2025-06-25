@@ -76,58 +76,7 @@ spec:
         </div>
         <!-- /wp:cover -->
         
-        <!-- wp:columns {"align":"wide","style":{"spacing":{"padding":{"top":"4rem","bottom":"4rem"}}}} -->
-        <div class="wp-block-columns alignwide" style="padding-top:4rem;padding-bottom:4rem">
-          <!-- wp:column -->
-          <div class="wp-block-column">
-            <!-- wp:heading {"textAlign":"center","level":3} -->
-            <h3 class="wp-block-heading has-text-align-center">⚡ Performance</h3>
-            <!-- /wp:heading -->
-            <!-- wp:paragraph {"align":"center"} -->
-            <p class="has-text-align-center">Infrastructure Nutanix haute performance avec stockage distribué.</p>
-            <!-- /wp:paragraph -->
-          </div>
-          <!-- /wp:column -->
-          
-          <!-- wp:column -->
-          <div class="wp-block-column">
-            <!-- wp:heading {"textAlign":"center","level":3} -->
-            <h3 class="wp-block-heading has-text-align-center">🔒 Sécurité</h3>
-            <!-- /wp:heading -->
-            <!-- wp:paragraph {"align":"center"} -->
-            <p class="has-text-align-center">Déploiement sécurisé avec FluxCD et isolation des conteneurs.</p>
-            <!-- /wp:paragraph -->
-          </div>
-          <!-- /wp:column -->
-          
-          <!-- wp:column -->
-          <div class="wp-block-column">
-            <!-- wp:heading {"textAlign":"center","level":3} -->
-            <h3 class="wp-block-heading has-text-align-center">📊 Observabilité</h3>
-            <!-- /wp:heading -->
-            <!-- wp:paragraph {"align":"center"} -->
-            <p class="has-text-align-center">Monitoring intégré et métriques temps réel.</p>
-            <!-- /wp:paragraph -->
-          </div>
-          <!-- /wp:column -->
-        </div>
-        <!-- /wp:columns -->
-        
-        <!-- wp:group {"style":{"color":{"background":"#f8fafc"},"spacing":{"padding":{"top":"2rem","bottom":"2rem","left":"2rem","right":"2rem"}},"border":{"radius":"1rem"}}} -->
-        <div class="wp-block-group has-background" style="border-radius:1rem;background-color:#f8fafc;padding-top:2rem;padding-right:2rem;padding-bottom:2rem;padding-left:2rem">
-          <!-- wp:heading {"textAlign":"center","level":2} -->
-          <h2 class="wp-block-heading has-text-align-center">🎯 Démonstration technique</h2>
-          <!-- /wp:heading -->
-          <!-- wp:list -->
-          <ul>
-            <li><strong>GitOps avec FluxCD</strong> - Déploiement automatisé depuis Git</li>
-            <li><strong>Helm Charts</strong> - Configuration et packaging standardisés</li>
-            <li><strong>Nutanix Kubernetes Platform</strong> - Infrastructure cloud-native</li>
-            <li><strong>Persistance des données</strong> - Volumes Nutanix hautement disponibles</li>
-          </ul>
-          <!-- /wp:list -->
-        </div>
-        <!-- /wp:group -->
+  
         EOF
         
         # Créer la page avec wp-cli
@@ -188,12 +137,30 @@ spec:
           enabled: true
           size: 8Gi
           storageClass: "nutanix-volume"
-        # Pour les StatefulSets, utiliser cette approche
-        podAnnotations:
-          "helm.sh/resource-policy": ""
-        # Ou directement sur le StatefulSet
-        statefulsetAnnotations:
-          "helm.sh/resource-policy": ""
+    
+    # Persistance WordPress
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "nutanix-volume"
+    
+    # Solution simple : Hook de nettoyage en 10 lignes
+    extraDeploy:
+    - apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: cleanup-pvcs
+        annotations:
+          "helm.sh/hook": pre-delete
+          "helm.sh/hook-delete-policy": before-hook-creation
+      spec:
+        template:
+          spec:
+            containers:
+            - name: cleanup
+              image: 10.0.114.161:5000/library/bitnami/kubectl:latest
+              command: ['sh', '-c', 'kubectl delete pvc -l app.kubernetes.io/instance=demo-wordpress --ignore-not-found=true']
+            restartPolicy: Never
 
 
 
