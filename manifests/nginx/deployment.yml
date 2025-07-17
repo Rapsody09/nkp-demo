@@ -8,7 +8,7 @@ metadata:
     component: frontend
     environment: demo
 spec:
-  replicas: 150
+  replicas: 3
   selector:
     matchLabels:
       app: demo-nginx
