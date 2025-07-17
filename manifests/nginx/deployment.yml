@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: 10.0.114.161:5000/library/nginx:1.25.3-alpine
+          image: 10.0.114.161:5000/app/nginx:1.25.3-alpine
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
