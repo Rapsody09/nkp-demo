@@ -18,7 +18,7 @@ spec:
       version: "24.2.10"
   values:
     global:
-      imageRegistry: "10.0.114.161:5000/app"
+      imageRegistry: "nkp.devops-hc.dev:5000/app"
       security:
         allowInsecureImages: true
     
@@ -186,9 +186,9 @@ spec:
             containers:
             - name: cleanup
               # CORRIGER : Utiliser une version spécifique
-              image: 10.0.114.161:5000/app/bitnami/kubectl:1.28.4
+              image: nkp.devops-hc.dev:5000/app/bitnami/kubectl:1.28.4
               # Ou la version correspondant à votre cluster
-              # image: 10.0.114.161:5000/app/bitnami/kubectl:1.29.1
+              # image: nkp.devops-hc.dev:5000/app/bitnami/kubectl:1.29.1
               command: 
               - /bin/bash
               - -c
