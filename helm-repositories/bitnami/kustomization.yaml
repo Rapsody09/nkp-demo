@@ -3,3 +3,6 @@ kind: Kustomization
 # DISABLED: Application temporairement désactivée
 # resources:
 #   - main.yaml
+metadata:
+  annotations:
+    flux.weave.works/ignore: "true"
