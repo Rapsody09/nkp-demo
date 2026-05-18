@@ -1,7 +1,12 @@
+# Bitnami a migré ses charts vers OCI uniquement.
+# L'ancien repo HTTP (https://charts.bitnami.com/bitnami) renvoie maintenant
+# des références OCI que le source-controller Flux ne sait pas suivre via
+# un HelmRepository de type HTTP. Il faut donc déclarer le repo en type: oci.
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: bitnami
 spec:
+  type: oci
   interval: 1h
-  url: https://charts.bitnami.com/bitnami
+  url: oci://registry-1.docker.io/bitnamicharts
