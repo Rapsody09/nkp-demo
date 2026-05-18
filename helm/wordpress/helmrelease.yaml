@@ -1,0 +1,151 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: wordpress
+spec:
+  interval: 15m
+  timeout: 15m
+  chart:
+    spec:
+      chart: wordpress
+      version: "27.0.0"   # chart Bitnami — appVersion 6.8.2
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+      interval: 1h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    # =========================================================
+    # ⚠️ Note sur le "StatefulSet demo"
+    # ---------------------------------------------------------
+    # Le chart Bitnami WordPress ne sait déployer que des
+    # Deployment (pas de StatefulSet pour WordPress lui-même).
+    # → WordPress  : Deployment + PVC RWO (persistance wp-content)
+    # → MariaDB    : StatefulSet (sous-chart, persistance native)
+    # La démo "kill pod / data persiste" reste valable sur les
+    # deux côtés grâce aux PVC.
+    # =========================================================
+
+    # --- WordPress ---
+    replicaCount: 1
+    updateStrategy:
+      # Obligatoire avec un PVC RWO mono-pod
+      type: Recreate
+
+    image:
+      registry: nkpdemo.devops-hc.dev:5000
+      repository: dockerhub-cache/bitnami/wordpress
+      # tag : laisser celui du chart (6.8.2-debian-12-r4)
+      pullPolicy: IfNotPresent
+
+    # Compte admin WordPress (password dans le secret)
+    wordpressUsername: admin
+    wordpressEmail: admin@poc.devops-hc.dev
+    wordpressBlogName: "NKP Demo Blog"
+    existingSecret: wordpress-credentials   # clé requise : wordpress-password
+
+    # Persistance wp-content (thèmes, plugins, uploads)
+    persistence:
+      enabled: true
+      size: 10Gi
+      accessModes:
+        - ReadWriteOnce
+      # storageClass: ""  # vide = StorageClass par défaut
+
+    # Init container qui chown le PVC : image à mirorer aussi
+    volumePermissions:
+      enabled: true
+      image:
+        registry: nkpdemo.devops-hc.dev:5000
+        repository: dockerhub-cache/bitnami/os-shell
+        pullPolicy: IfNotPresent
+
+    # Service interne (l'accès passe par l'Ingress)
+    service:
+      type: ClusterIP
+
+    # Ingress HTTPS via cert-manager + external-dns
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hostname: wordpress.poc.devops-hc.dev
+      pathType: Prefix
+      tls: true            # → secret auto-créé : wordpress.poc.devops-hc.dev-tls
+      selfSigned: false    # cert-manager le remplit
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        external-dns.alpha.kubernetes.io/hostname: wordpress.poc.devops-hc.dev
+        nginx.ingress.kubernetes.io/proxy-body-size: "64m"
+
+    # Ressources explicites (désactive le preset par défaut "micro")
+    resourcesPreset: "none"
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+
+    # PodDisruptionBudget : inutile avec 1 replica, bloquerait drain de node
+    pdb:
+      create: false
+
+    # =========================================================
+    # MariaDB (sous-chart — StatefulSet)
+    # =========================================================
+    mariadb:
+      enabled: true
+      architecture: standalone    # mettre "replication" pour 2 STS HA
+
+      image:
+        registry: nkpdemo.devops-hc.dev:5000
+        repository: dockerhub-cache/bitnami/mariadb
+        pullPolicy: IfNotPresent
+
+      auth:
+        existingSecret: wordpress-credentials
+        # Clés requises dans le secret :
+        #   mariadb-root-password
+        #   mariadb-password
+        #   mariadb-replication-password (uniquement si architecture=replication)
+        database: bitnami_wordpress
+        username: bn_wordpress
+
+      primary:
+        persistence:
+          enabled: true
+          size: 8Gi
+          accessModes:
+            - ReadWriteOnce
+        resourcesPreset: "none"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: 1Gi
+        # Init container chown
+        volumePermissions:
+          enabled: true
+          image:
+            registry: nkpdemo.devops-hc.dev:5000
+            repository: dockerhub-cache/bitnami/os-shell
+            pullPolicy: IfNotPresent
+        pdb:
+          create: false
+
+    # =========================================================
+    # Désactivés pour rester simple
+    # =========================================================
+    memcached:
+      enabled: false
+
+    metrics:
+      enabled: false
