@@ -78,9 +78,10 @@ spec:
       type: ClusterIP
 
     # Ingress HTTPS via cert-manager + external-dns
+    # IngressClass = traefik (Kommander/NKP utilise kommander-traefik comme controller)
     ingress:
       enabled: true
-      ingressClassName: nginx
+      ingressClassName: kommander-traefik
       hostname: wordpress.poc.devops-hc.dev
       pathType: Prefix
       tls: true            # → secret auto-créé : wordpress.poc.devops-hc.dev-tls
@@ -88,7 +89,8 @@ spec:
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-with-cloudflare
         external-dns.alpha.kubernetes.io/hostname: wordpress.poc.devops-hc.dev
-        nginx.ingress.kubernetes.io/proxy-body-size: "64m"
+        # Traefik n'écrit l'Address sur l'Ingress que si publishedService est configuré.
+        # On fixe la cible explicitement pour external-dns (IP du LB kommander-traefik) :
 
     # Ressources explicites (désactive le preset par défaut "micro")
     resourcesPreset: "none"
