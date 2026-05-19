@@ -82,13 +82,13 @@ spec:
     ingress:
       enabled: true
       ingressClassName: kommander-traefik
-      hostname: wordpress.poc.devops-hc.dev
+      hostname: wordpress2.poc.devops-hc.dev
       pathType: Prefix
       tls: true            # → secret auto-créé : wordpress.poc.devops-hc.dev-tls
       selfSigned: false    # cert-manager le remplit
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-with-cloudflare
-        external-dns.alpha.kubernetes.io/hostname: wordpress.poc.devops-hc.dev
+        external-dns.alpha.kubernetes.io/hostname: wordpress2.poc.devops-hc.dev
         # Traefik n'écrit l'Address sur l'Ingress que si publishedService est configuré.
         # On fixe la cible explicitement pour external-dns (IP du LB kommander-traefik) :
 
