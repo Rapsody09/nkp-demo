@@ -86,7 +86,7 @@ spec:
       tls: true            # → secret auto-créé : wordpress.poc.devops-hc.dev-tls
       selfSigned: false    # cert-manager le remplit
       annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-prod
+        cert-manager.io/cluster-issuer: letsencrypt-with-cloudflare
         external-dns.alpha.kubernetes.io/hostname: wordpress.poc.devops-hc.dev
         nginx.ingress.kubernetes.io/proxy-body-size: "64m"
 
