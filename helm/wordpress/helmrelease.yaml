@@ -151,11 +151,44 @@ spec:
         pdb:
           create: false
 
+      # --- MariaDB metrics (mysqld-exporter) ---
+      metrics:
+        enabled: true
+        image:
+          registry: nkpdemo.devops-hc.dev:5000
+          repository: dockerhub-cache/bitnami/mysqld-exporter
+          pullPolicy: IfNotPresent
+        resourcesPreset: "none"
+        resources:
+          requests: { cpu: 50m, memory: 64Mi }
+          limits:   { cpu: 200m, memory: 128Mi }
+        serviceMonitor:
+          enabled: true
+          interval: 30s
+          # ⚠️ label requis pour être scrapé par le Prometheus NKP
+          labels:
+            release: kube-prometheus-stack
+
     # =========================================================
     # Désactivés pour rester simple
     # =========================================================
     memcached:
       enabled: false
 
+    # --- WordPress metrics (apache-exporter) ---
     metrics:
-      enabled: false
+      enabled: true
+      image:
+        registry: nkpdemo.devops-hc.dev:5000
+        repository: dockerhub-cache/bitnami/apache-exporter
+        pullPolicy: IfNotPresent
+      resourcesPreset: "none"
+      resources:
+        requests: { cpu: 50m, memory: 64Mi }
+        limits:   { cpu: 200m, memory: 128Mi }
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        # ⚠️ label requis pour être scrapé par le Prometheus NKP
+        labels:
+          release: kube-prometheus-stack
