@@ -75,12 +75,12 @@ spec:
 
     # Service interne (l'accès passe par l'Ingress)
     service:
-      type: ClusterIP
+      type: LoadBalancer
 
     # Ingress HTTPS via cert-manager + external-dns
     # IngressClass = traefik (Kommander/NKP utilise kommander-traefik comme controller)
     ingress:
-      enabled: true
+      enabled: false
       ingressClassName: kommander-traefik
       hostname: wordpress.poc.devops-hc.dev
       pathType: Prefix
